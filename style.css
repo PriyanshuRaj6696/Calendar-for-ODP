@@ -1,0 +1,185 @@
+/* ===== Reset ===== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+}
+
+.mainbody {
+    display: flex;
+}
+
+/* ===== Page center ===== */
+body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    background: #edecec;
+}
+
+
+/* ===== Calendar card ===== */
+.calendar-container {
+    background: #484747;
+    height: 460px;
+    width: 380px;
+    padding: 15px;
+    border-radius: 12px;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.12);
+    color: white;
+}
+
+
+/* ===== Header ===== */
+.calendar-container header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.calendar-current-date {
+    font-size: 1.2rem;
+    font-weight: 500;
+}
+
+
+/* ===== Navigation buttons ===== */
+.calendar-navigation {
+    display: flex;
+    gap: 6px;
+}
+
+.calendar-navigation div {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    background: #5a5a5a;
+    transition: 0.2s;
+}
+
+.calendar-navigation div:hover {
+    background: #6d6d6d;
+}
+
+.calendar-navigation img {
+    width: 18px;
+    height: 18px;
+}
+
+
+/* ===== Body ===== */
+.calendar-body {
+    padding: 5px 0;
+}
+
+.calendar-body ul {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    text-align: center;
+}
+
+
+/* ===== Weekdays ===== */
+.calendar-weekdays li {
+    width: calc(100% / 7);
+    font-weight: 600;
+    font-size: 0.85rem;
+    padding: 6px 0;
+    color: #dcdcdc;
+    cursor: default;
+}
+
+
+/* ===== Dates grid ===== */
+.calendar-dates {
+    width: 100%;
+    min-height: 260px;   /* prevents jumping when months change */
+}
+
+
+/* ===== Each day cell ===== */
+.calendar-body li {
+    width: calc(100% / 7);
+    aspect-ratio: 1 / 1;   /* perfect square */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    margin-top: 6px;
+    font-size: 0.9rem;
+    position: relative;
+    cursor: pointer;
+}
+
+.calendar-dates li:not(.active):not(.highlight):hover {
+    background: #858484;
+}
+
+/* ===== Today highlight (circle) ===== */
+.calendar-dates li.active::before {
+    content: "";
+    position: absolute;
+    inset: 4px;
+    border-radius: 50%;
+    background: #6964ff;
+    z-index: -1;
+}
+
+.calendar-dates li.active {
+    background-color: #6964ff;
+}
+
+
+/* ===== Inactive days (prev/next month) ===== */
+.calendar-dates li.inactive {
+    color: #9b9b9b;
+    cursor: default;
+}
+
+
+/* ===== Selected day highlight ===== */
+.calendar-dates li.highlight {
+    border: 2px dotted #38f3b1;
+    border-radius: 50%;
+}
+
+/* date preview styling starts from here */
+
+.date-division {
+    height: 100%;
+    width: 400px;
+    box-shadow: 0 6px 14px rgba(0,0,0,0.25);
+    position: fixed; right: 0px;
+    background-color: white;
+    display: flex;
+    align-items: center;
+}
+
+.date-preview {
+    margin-left: 1px;
+    height: 300px;  /* Change it to max-content*/
+    width: inherit;
+    position: fixed; right: 0px;
+    background-color: #38f3b1;
+    z-index: 10;
+    display: flex;
+    justify-content: center;
+}
+
+.selecteddate {
+    height: max-content;
+    width: 100%;
+    box-shadow: 0 6px 14px rgba(0,0,0,0.25);
+    display: flex;
+    justify-content: center;
+    background-color: #dcdcdc;
+
+}
