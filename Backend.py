@@ -39,9 +39,12 @@ def get_table_with_limit(query, pageno=0, pagelimit=100):
 # Start page of the Web Application
 @app.route('/')
 def index():
-    return render_template('webport.html') # Supports webport.html 
+    return render_template('Calendar.html') # Starts with calendar.html
 
 # Route to display standard table on webport.html
 @app.route('/open-standard', methods=['GET'])
 def standardcontainer():
     return render_template('standardtable.html')
+
+if __name__ == '__main__':
+    app.run(debug=True)

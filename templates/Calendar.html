@@ -1,23 +1,19 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <link rel="stylesheet" href="style.css">
-    <title>Calendar</title>
-    </head>
+{% extends 'base.html' %}
 
-<body>
+<!-- Body content -->
+{% block body %}
     <div class="mainbody">
         <div class="calendar-container">
         <header class="calendar-header">
             <p class="calendar-current-date"></p>
             <div class="calendar-navigation">
-                <div id="calendar-prev" 
-                      class="material-symbols-rounded">
-                    <img src="left-arrow.png" widht="30px" height="30px" alt="Previous">
+                <div id="calendar-prev" class="material-symbols-rounded">
+                    <img src="{{ url_for('static', filename='images/left-arrow.png') }}" 
+                        width="30px" height="30px" alt="Previous">
                 </div>
-                <div id="calendar-next" 
-                      class="material-symbols-rounded">
-                    <img src="right-arrow.png" widht="30px" height="30px" alt="Previous">
+                <div id="calendar-next" class="material-symbols-rounded">
+                    <img src="{{ url_for('static', filename='images/right-arrow.png') }}" 
+                        width="30px" height="30px" alt="Next">
                 </div>
             </div>
         </header>
@@ -40,7 +36,9 @@
         <div class="date-preview">
         </div>
     </div>
-    <script src="script.js"></script>
+{% endblock %}
 
-</body>
-</html>
+<!-- Script for the page -->
+{% block script %}
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+{% endblock %}
