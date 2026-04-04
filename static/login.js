@@ -2,10 +2,10 @@ document.addEventListener("DOMContentLoaded", () => {
 	const form = document.querySelector("form");
 	if (!form) return;
 
-	const usernameInput =
-		form.querySelector('input[name="username"]') ||
+	const useridInput =
+		form.querySelector('input[name="userid"]') ||
 		form.querySelector('input[type="text"]') ||
-		form.querySelector("#username");
+		form.querySelector("#userid");
 
 	const passwordInput =
 		form.querySelector('input[name="password"]') ||
@@ -29,11 +29,11 @@ document.addEventListener("DOMContentLoaded", () => {
 	form.addEventListener("submit", async (event) => {
 		event.preventDefault();
 
-		const username = (usernameInput?.value || "").trim();
+		const userid = (useridInput?.value || "").trim();
 		const password = passwordInput?.value || "";
 
-		if (!username || !password) {
-			setMessage("Please enter username and password.");
+		if (!userid || !password) {
+			setMessage("Please enter userid and password.");
 			return;
 		}
 
@@ -48,14 +48,14 @@ document.addEventListener("DOMContentLoaded", () => {
 				headers: {
 					"Content-Type": "application/json",
 				},
-				body: JSON.stringify({ username, password }),
+				body: JSON.stringify({ userid, password }),
 			})
-            console.log(username, password);
+            console.log(userid, password);
 
 			const data = await response.json().catch(() => ({}));
 
 			if (!response.ok) {
-				setMessage(data.message || "Invalid username or password.");
+				setMessage(data.message || "Invalid userid or password.");
 				return;
 			}
 

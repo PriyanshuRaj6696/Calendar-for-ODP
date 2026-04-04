@@ -2,7 +2,7 @@
 
 <!-- Body content -->
 {% block body %}
-    <div class="mainbody">
+    <div class="mainbody" data-username="{{ username }}">
         <div class="calendar-container">
         <header class="calendar-header">
             <p class="calendar-current-date"></p>
@@ -40,5 +40,8 @@
 
 <!-- Script for the page -->
 {% block script %}
+    <script>
+        window.calendarUsername = "{{ username }}";
+    </script>
     <script src="{{ url_for('static', filename='script.js') }}"></script>
 {% endblock %}
