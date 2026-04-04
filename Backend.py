@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, url_for
 import mysql.connector
 import os
 from datetime import datetime
@@ -41,9 +41,39 @@ def get_table_with_limit(query, pageno=0, pagelimit=100):
 def index():
     return render_template('login.html') # Starts with calendar.html
 
+
+@app.route('/calendar/<username>')
+def calendar_page(username):
+    '''current_month = datetime.now().strftime("%m")
+    current_date = datetime.now().strftime("%d")'''
+    current_month = 9
+    current_date = 2
+    print(f"Current Month: {current_month}")
+    print(f"Current Date: {current_date}")
+    conn = mysql.connector.connect(**db_config)
+    cursor = conn.cursor()
+    query = '''Select c.coursecode, coursename, professorname, sessiontype, start_time, end_time, repetition, start_date, end_date from course as c 
+join (Select * from coursesession 
+		where coursecode in (Select registered_coursecode from user
+			where userid = 001 and coursestatus = "active")) as cse
+on c.coursecode = cse.coursecode
+join trimester as tr on c.session_id = tr.session_id;'''
+    cursor.execute(query)
+    tabledata = cursor.fetchall()
+    eventtabledata = []
+    for row in tabledata:
+        course_start_date, course_start_month = row[7].split("-")
+        course_end_date, course_end_month = row[8].split("-")
+        if current_month >= int(course_start_month) and current_date >= int(course_start_date) and current_month <= int(course_end_month) and current_date <= int(course_end_date):
+            eventtabledata.append(row)
+    #print(f"Data: {tabledata}, Username: {username}")
+    cursor.close()
+    conn.close()
+    return render_template('Calendar.html', username=username, eventtabledata=eventtabledata)
+
 @app.route('/login', methods=['POST'])
 def login():
-    data = request.get_json()
+    data = request.get_json(silent=True) or {}
     username = data.get('username')
     password = data.get('password')
 
@@ -60,7 +90,7 @@ def login():
     if pwd and password == pwd[0]: # Replace with actual authentication logic
         return jsonify({
         "message": "Login successful",
-        "redirect": "/Calendar.html"
+        "redirect": url_for('calendar_page', username=username)
     }), 200 # Redirect to calendar page on successful login
     else:
         return jsonify({
