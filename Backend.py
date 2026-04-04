@@ -39,7 +39,33 @@ def get_table_with_limit(query, pageno=0, pagelimit=100):
 # Start page of the Web Application
 @app.route('/')
 def index():
-    return render_template('Calendar.html') # Starts with calendar.html
+    return render_template('login.html') # Starts with calendar.html
+
+@app.route('/login', methods=['POST'])
+def login():
+    data = request.get_json()
+    username = data.get('username')
+    password = data.get('password')
+
+    conn = mysql.connector.connect(**db_config)
+    cursor = conn.cursor()
+    query = "SELECT pwd FROM userpwd WHERE username = %s"
+    cursor.execute(query, (username,))
+    pwd = cursor.fetchone()
+    print(f"Query: {query}, Username: {username}, Password: {password}, Fetched PWD: {pwd}")
+    cursor.close()
+    conn.close()
+
+    # Add your login logic here
+    if pwd and password == pwd[0]: # Replace with actual authentication logic
+        return jsonify({
+        "message": "Login successful",
+        "redirect": "/Calendar.html"
+    }), 200 # Redirect to calendar page on successful login
+    else:
+        return jsonify({
+            "message": "Invalid username or password"
+        }), 401 # Return error message for invalid credentials
 
 # Route to display standard table on webport.html
 @app.route('/open-standard', methods=['GET'])
