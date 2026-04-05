@@ -50,11 +50,15 @@ def login():
         }), 401 # Return error message for invalid credentials
 
 
-@app.route('/calendar/<userid>')
+@app.route('/calendar/<userid>', methods=['GET'])
 def calendar_page(userid):
-    current_month = datetime.now().month
-    current_date = datetime.now().day
-    current_year = datetime.now().year
+    return render_template('Calendar.html', username=userid) # Pass the userid to the calendar page
+
+@app.route('/api/calendar-events/<userid>', methods=['GET'])
+def calendar_events(userid):
+    current_month = int(request.args.get('cmonth'))
+    current_date = int(request.args.get('cday'))
+    current_year = int(request.args.get('cyear'))
     print(f"Current Month: {current_month}")
     print(f"Current Date: {current_date}")
     conn = mysql.connector.connect(**db_config)
@@ -67,7 +71,7 @@ JOIN coursesession cse
     ON c.coursecode = cse.coursecode
 JOIN trimester tr 
     ON c.session_id = tr.session_id
-WHERE ur.userid = %s
+WHERE ur.userid = %s 
   AND ur.coursestatus = 'active';''')
     cursor.execute(query, (userid,))
     tabledata = cursor.fetchall()
@@ -89,8 +93,8 @@ WHERE ur.userid = %s
                 "start_time": row[4].strftime("%H:%M") if hasattr(row[4], "strftime") else str(row[4]),
                 "end_time": row[5].strftime("%H:%M") if hasattr(row[5], "strftime") else str(row[5]),
                 "repetition": row[6],
-                "start_date": row[7],
-                "end_date": row[8],
+                #"start_date": row[7],
+                #"end_date": row[8],
                 "start_day": course_start_date,
                 "start_month": course_start_month,
                 "start_year": course_start_year,
@@ -98,62 +102,12 @@ WHERE ur.userid = %s
                 "end_month": course_end_month,
                 "end_year": course_end_year,
             })
-    print(f"Event Table Data: {eventtabledata}")
-    #print(f"Data: {tabledata}, Username: {username}")
-    cursor.close()
-    conn.close()
-    return render_template('Calendar.html', username=userid, eventtabledata=eventtabledata)
-
-
-@app.route('/api/calendar-events/<userid>')
-def calendar_events(userid):
-    conn = mysql.connector.connect(**db_config)
-    cursor = conn.cursor()
-    query = ('''SELECT c.coursecode, c.coursename, c.professorname, cse.sessiontype, cse.start_time, cse.end_time, cse.repetition, tr.start_date, tr.end_date, ur.year
-FROM user ur
-JOIN course c 
-    ON ur.registered_coursecode = c.coursecode
-JOIN coursesession cse 
-    ON c.coursecode = cse.coursecode
-JOIN trimester tr 
-    ON c.session_id = tr.session_id
-WHERE ur.userid = %s 
-  AND ur.coursestatus = 'active';''')
-    cursor.execute(query, (userid,))
-    tabledata = cursor.fetchall()
-    eventtabledata = []
-
-    for row in tabledata:
-        course_start_date, course_start_month = map(int, row[7].split("-"))
-        course_end_date, course_end_month = map(int, row[8].split("-"))
-        course_start_year = int(row[9])
-        course_end_year = int(row[9])
-        eventtabledata.append({
-            "coursecode": row[0],
-            "coursename": row[1],
-            "professorname": row[2],
-            "sessiontype": row[3],
-            "start_time": row[4].strftime("%H:%M") if hasattr(row[4], "strftime") else str(row[4]),
-            "end_time": row[5].strftime("%H:%M") if hasattr(row[5], "strftime") else str(row[5]),
-            "repetition": row[6],
-            "start_date": row[7],
-            "end_date": row[8],
-            "start_day": course_start_date,
-            "start_month": course_start_month,
-            "start_year": course_start_year,
-            "end_day": course_end_date,
-            "end_month": course_end_month,
-            "end_year": course_end_year,
-        })
-
+    #print(f"Event Table Data: {eventtabledata}")
+    for event in eventtabledata:
+        print(f"Event: {event['coursecode']}, Session Type: {event['sessiontype']}, Start Date: {event['start_day']}-{event['start_month']}-{event['start_year']}, End Date: {event['end_day']}-{event['end_month']}-{event['end_year']}")
     cursor.close()
     conn.close()
     return jsonify({"username": userid, "events": eventtabledata})
-
-# Route to display standard table on webport.html
-@app.route('/open-standard', methods=['GET'])
-def standardcontainer():
-    return render_template('standardtable.html')
 
 if __name__ == '__main__':
     app.run(debug=True)
