@@ -46,7 +46,7 @@ async function loadEvents() {
 }
 
 async function loadclickedEvents() {
-    const res = await fetch("http://127.0.0.1:5000//api/calendar-events/" + window.calendarUsername + "?cday=" + clickedDay + "&cmonth=" + (month + 1) + "&cyear=" + year);
+    const res = await fetch("http://127.0.0.1:5000//api/calendar-events/" + window.calendarUsername + "?cmonth=" + (month + 1) + "&cyear=" + year);
     const data = await res.json();
     //console.log("Events data:", data);  // Debug log
     events = data.events;
@@ -65,13 +65,16 @@ async function updateDatePreview() {
   let selecteddate;
   let events = [];
   let daywiseevents = [];
+  let coursestartingdate;
+
+  events = await loadclickedEvents();  // Call the function to load events for the clicked date
 
   if (clickedDay) {
     selecteddate = `${clickedDay} ${months[month]} ${year}`;
-    events = await loadclickedEvents();  // Call the function to load events for the clicked date
+    //events = await loadClickedEvents();  // Call the function to load events for the clicked date
   } else {
     selecteddate = `${today.getDate()} ${months[today.getMonth()]} ${today.getFullYear()}`;
-    events = await loadEvents();  // Call the function to load events on page load
+    //events = await loadEvents();  // Call the function to load events on page load
   }
 
   /** Cleanup */
@@ -87,56 +90,68 @@ async function updateDatePreview() {
     previewlist += `<div class="event-item">No events scheduled for this date.</div>`;
   }
 
+  /* Finding out the first monday for start date of the course */
+  for (let i = 0; i <= lastdate; i++) {
+    coursestartingdate = 1;
+    if (new Date(year, month, i).getDay() == 1) {
+      break;
+    }
+    coursestartingdate = coursestartingdate + 1;
+  }
+
   /* Make daywise event from retrieved event info */
   events.forEach(event => {
-    if (clickedDay >= event.start_day && (month + 1) >= event.start_month && event.start_year === year) {
+    if (clickedDay >= coursestartingdate && (month + 1) >= event.start_month && event.start_year === year) {
       if (event.repetition.split(" ")[0] === "Every") {
-        let eventstartday = []
-        eventstartday = event.repetition.split(" ")[1];
+        let eventdaylist = []
+        eventdaylist = event.repetition.split(" ")[1];
         //console.log("First Date of month:", new Date(year, month, event.start_day));  // Debug log
         //console.log("First Day of month:", days[dayone]);  // Debug log
         //console.log("Event Start Day:", days[eventstartday]);  // Debug log
         //console.log("Starting date for the event:", event.start_day);  // Debug log
         /* Loop to find the first occurrence of the event in the month */
         for (let i = 0; i < 7; i++) {
-          event.start_day = event.start_day + 1;
           //console.log("After increasing by 1 Event Start date:", event.start_day);  // Debug log
           //console.log("After increasing by 1 Event Start Day:", days[new Date(year, month, event.start_day).getDay()]);  // Debug log
-          if (new Date(year, month, event.start_day).getDay() == eventstartday) {
+          if (new Date(year, month, coursestartingdate).getDay() == eventdaylist) {
             //console.log("Event added for preview:", event.start_day);  // Debug log
             break;
           }
+          coursestartingdate = coursestartingdate + 1;
         }
         //console.log("Clicked Day:", clickedDay);  // Debug log
-        for (let j = event.start_day; j <= lastdate; j += 7) {
+        for (let j = coursestartingdate; j <= lastdate; j += 7) {
           if (j == clickedDay) {
             daywiseevents.push(event);
             //console.log("Event added for preview:", event);  // Debug log
           }
         }
       } else if (event.repetition.split(" ")[0] === "Alternate") {
-        let eventstartday = []
+        let tempeventstart = coursestartingdate;  // Store the original starting date for resetting later
+        let eventdaylist = []
         // Handle alternate repetition logic
-        eventstartday = event.repetition.split(" ")[1].split(",");
+        eventdaylist = event.repetition.split(" ")[1].split(",");
         let week = event.repetition.split(" ")[2];  // "Week1" or "Week2"
-        //console.log("Alternate Event Start Day:", eventstartday, "Type:", typeof eventstartday);  // Debug log
-        eventstartday.forEach(day => {
+        //console.log("Alternate Event Start Day:", eventdaylist, "Type:", typeof eventdaylist);  // Debug log
+        eventdaylist.forEach(day => {
+          console.log("Session Type:", event.sessiontype);  // Debug log
           console.log("1.Event Start Day:", days[day]);  // Debug log
+          console.log("Starting date for the course:", coursestartingdate);  // Debug log
           for (let i = 0; i < 7; i++) {
-            event.start_day = event.start_day + 1;
-            console.log("After increasing by 1 Event Start date:", event.start_day);  // Debug log
-            console.log("After increasing by 1 Event Start Day:", days[new Date(year, month, event.start_day).getDay()]);  // Debug log
-            if (new Date(year, month, event.start_day).getDay() == day) {
-              console.log("Event added for preview:", event.start_day);  // Debug log
+            console.log("After increasing by 1 Event Start date:", coursestartingdate);  // Debug log
+            console.log("After increasing by 1 Event Start Day:", days[new Date(year, month, coursestartingdate).getDay()]);  // Debug log
+            if (new Date(year, month, coursestartingdate).getDay() == day) {
+              console.log("Event added for preview:", coursestartingdate);  // Debug log
               break;
             }
+            coursestartingdate = coursestartingdate + 1;
           }
-          console.log("2.Event Start Day:", days[new Date(year, month, event.start_day).getDay()]);  // Debug log
+          console.log("2.Event Start Day:", days[new Date(year, month, coursestartingdate).getDay()]);  // Debug log
           console.log("Clicked Day:", clickedDay);  // Debug log
           console.log("Week Type:", week);  // Debug log
           if (week == 0) {
             console.log("Entered Week 1 logic");  // Debug log
-            for (let j = event.start_day; j <= lastdate; j += 14) {
+            for (let j = coursestartingdate; j <= lastdate; j += 14) {
               if (j == clickedDay) {
                 daywiseevents.push(event);
                 console.log("Event added for preview:", event);  // Debug log
@@ -144,13 +159,15 @@ async function updateDatePreview() {
             }
           } else if (week == 1) {
             console.log("Entered Week 2 logic");  // Debug log
-            for (let j = event.start_day + 7; j <= lastdate; j += 14) {
+            for (let j = coursestartingdate + 7; j <= lastdate; j += 14) {
               if (j == clickedDay) {
+                console.log("Clicked Day:", clickedDay);  // Debug log
                 daywiseevents.push(event);
                 console.log("Event added for preview:", event);  // Debug log
               }
             }
           }
+          coursestartingdate = tempeventstart;  // Reset start date for next iteration
         });
       } else {
         // Do Nothing
@@ -220,7 +237,6 @@ const manipulate = () => {
   addClickListenersToDays();
   updateDatePreview();   //  update preview every render
 };
-
 
 /* =========================
    CLICK HANDLER

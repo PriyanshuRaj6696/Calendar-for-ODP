@@ -57,10 +57,10 @@ def calendar_page(userid):
 @app.route('/api/calendar-events/<userid>', methods=['GET'])
 def calendar_events(userid):
     current_month = int(request.args.get('cmonth'))
-    current_date = int(request.args.get('cday'))
+    #current_date = int(request.args.get('cday'))
     current_year = int(request.args.get('cyear'))
     print(f"Current Month: {current_month}")
-    print(f"Current Date: {current_date}")
+    #print(f"Current Date: {current_date}")
     conn = mysql.connector.connect(**db_config)
     cursor = conn.cursor()
     query = ('''SELECT c.coursecode, c.coursename, c.professorname, cse.sessiontype, cse.start_time, cse.end_time, cse.repetition, tr.start_date, tr.end_date, ur.year
@@ -102,6 +102,7 @@ WHERE ur.userid = %s
                 "end_month": course_end_month,
                 "end_year": course_end_year,
             })
+    print(f"Start Date: {course_start_date}")
     #print(f"Event Table Data: {eventtabledata}")
     for event in eventtabledata:
         print(f"Event: {event['coursecode']}, Session Type: {event['sessiontype']}, Start Date: {event['start_day']}-{event['start_month']}-{event['start_year']}, End Date: {event['end_day']}-{event['end_month']}-{event['end_year']}")
