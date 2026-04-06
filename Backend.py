@@ -52,15 +52,10 @@ def login():
 
 @app.route('/calendar/<userid>', methods=['GET'])
 def calendar_page(userid):
-    return render_template('Calendar.html', username=userid) # Pass the userid to the calendar page
+    return render_template('Calendar.html', username=userid, userid=userid) # Pass the userid to the calendar page
 
 @app.route('/api/calendar-events/<userid>', methods=['GET'])
 def calendar_events(userid):
-    current_month = int(request.args.get('cmonth'))
-    #current_date = int(request.args.get('cday'))
-    current_year = int(request.args.get('cyear'))
-    print(f"Current Month: {current_month}")
-    #print(f"Current Date: {current_date}")
     conn = mysql.connector.connect(**db_config)
     cursor = conn.cursor()
     query = ('''SELECT c.coursecode, c.coursename, c.professorname, cse.sessiontype, cse.start_time, cse.end_time, cse.repetition, tr.start_date, tr.end_date, ur.year
@@ -81,31 +76,21 @@ WHERE ur.userid = %s
         course_end_date, course_end_month = map(int, row[8].split("-"))
         course_start_year = int(row[9])
         course_end_year = int(row[9])
-        if (
-            (current_year > course_start_year or (current_year == course_start_year and current_month >= course_start_month))
-            and (current_year < course_end_year or (current_year == course_end_year and current_month <= course_end_month))
-        ):
-            eventtabledata.append({
-                "coursecode": row[0],
-                "coursename": row[1],
-                "professorname": row[2],
-                "sessiontype": row[3],
-                "start_time": row[4].strftime("%H:%M") if hasattr(row[4], "strftime") else str(row[4]),
-                "end_time": row[5].strftime("%H:%M") if hasattr(row[5], "strftime") else str(row[5]),
-                "repetition": row[6],
-                #"start_date": row[7],
-                #"end_date": row[8],
-                "start_day": course_start_date,
-                "start_month": course_start_month,
-                "start_year": course_start_year,
-                "end_day": course_end_date,
-                "end_month": course_end_month,
-                "end_year": course_end_year,
-            })
-    print(f"Start Date: {course_start_date}")
-    #print(f"Event Table Data: {eventtabledata}")
-    for event in eventtabledata:
-        print(f"Event: {event['coursecode']}, Session Type: {event['sessiontype']}, Start Date: {event['start_day']}-{event['start_month']}-{event['start_year']}, End Date: {event['end_day']}-{event['end_month']}-{event['end_year']}")
+        eventtabledata.append({
+            "coursecode": row[0],
+            "coursename": row[1],
+            "professorname": row[2],
+            "sessiontype": row[3],
+            "start_time": row[4].strftime("%H:%M") if hasattr(row[4], "strftime") else str(row[4]),
+            "end_time": row[5].strftime("%H:%M") if hasattr(row[5], "strftime") else str(row[5]),
+            "repetition": row[6],
+            "start_day": course_start_date,
+            "start_month": course_start_month,
+            "start_year": course_start_year,
+            "end_day": course_end_date,
+            "end_month": course_end_month,
+            "end_year": course_end_year,
+        })
     cursor.close()
     conn.close()
     return jsonify({"username": userid, "events": eventtabledata})

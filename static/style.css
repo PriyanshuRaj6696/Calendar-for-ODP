@@ -23,8 +23,8 @@ body {
 /* ===== Calendar card ===== */
 .calendar-container {
     background: #484747;
-    height: 460px;
-    width: 380px;
+    height: 550px;
+    width: 440px;
     padding: 15px;
     border-radius: 12px;
     box-shadow: 0 15px 40px rgba(0, 0, 0, 0.12);
@@ -53,8 +53,8 @@ body {
 }
 
 .calendar-navigation div {
-    width: 36px;
-    height: 36px;
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -119,6 +119,46 @@ body {
     cursor: pointer;
 }
 
+.calendar-dates li .day-number {
+    position: relative;
+    z-index: 2;
+}
+
+.calendar-dates li .event-dots {
+    position: absolute;
+    bottom: 5px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: inline-flex;
+    gap: 2px;
+    max-width: 90%;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.calendar-dates li .event-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #38f3b1;
+}
+
+.calendar-dates li .event-overflow {
+    font-size: 0.62rem;
+    line-height: 1;
+    color: #38f3b1;
+    font-weight: 600;
+    margin-left: 2px;
+}
+
+.calendar-dates li.active .event-dot {
+    background: #ffffff;
+}
+
+.calendar-dates li.active .event-overflow {
+    color: #ffffff;
+}
+
 .calendar-dates li:not(.active):not(.highlight):hover {
     background: #858484;
 }
@@ -181,6 +221,7 @@ body {
     box-shadow: 0 6px 14px rgba(0,0,0,0.25);
     display: flex;
     justify-content: center;
+    flex-direction: column;
     margin-top: 5px;
 }
 
