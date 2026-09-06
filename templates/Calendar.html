@@ -2,18 +2,22 @@
 
 <!-- Body content -->
 {% block body %}
+    <main class="calendar-page" aria-label="Academic calendar">
     <div class="mainbody" data-username="{{ username }}">
         <div class="calendar-container">
         <header class="calendar-header">
-            <p class="calendar-current-date"></p>
+            <div class="calendar-heading">
+                <span class="calendar-eyebrow">IIT Guwahati</span>
+                <p class="calendar-current-date" aria-live="polite"></p>
+            </div>
             <div class="calendar-navigation">
-                <div id="calendar-prev" class="material-symbols-rounded">
+                <div id="calendar-prev" class="material-symbols-rounded" role="button" tabindex="0" aria-label="Show previous month">
                     <img src="{{ url_for('static', filename='images/left-arrow.png') }}" 
-                        width="30px" height="30px" alt="Previous">
+                        width="30px" height="30px" alt="">
                 </div>
-                <div id="calendar-next" class="material-symbols-rounded">
+                <div id="calendar-next" class="material-symbols-rounded" role="button" tabindex="0" aria-label="Show next month">
                     <img src="{{ url_for('static', filename='images/right-arrow.png') }}" 
-                        width="30px" height="30px" alt="Next">
+                        width="30px" height="30px" alt="">
                 </div>
             </div>
         </header>
@@ -30,12 +34,28 @@
             </ul>
             <ul class="calendar-dates"></ul>
         </div>
+        <div class="calendar-hint">Select a date to inspect its sessions</div>
         </div>
     </div>
     <div class="date-division">
         <div class="date-preview"></div>
         <div class="date-events"></div>
     </div>
+    </main>
+
+    <footer class="calendar-footer">
+        <div class="footer-intro">
+            <span class="footer-kicker">Event key</span>
+            <span class="footer-note">Colored dots show scheduled sessions on a date.</span>
+        </div>
+        <div class="event-legend" aria-label="Event type color key">
+            <span class="legend-item"><span class="legend-swatch legend-npt"></span>NPT</span>
+            <span class="legend-item"><span class="legend-swatch legend-pt"></span>PT</span>
+            <span class="legend-item"><span class="legend-swatch legend-st"></span>ST</span>
+            <span class="legend-item"><span class="legend-swatch legend-live"></span>Live</span>
+            <span class="legend-item"><span class="legend-swatch legend-lab"></span>Lab</span>
+        </div>
+    </footer>
 {% endblock %}
 
 <!-- Script for the page -->

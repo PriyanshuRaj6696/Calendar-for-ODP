@@ -12,6 +12,7 @@ const currdate = document.querySelector(".calendar-current-date");
 const prenexIcons = document.querySelectorAll(".calendar-navigation div");
 const datepreview = document.querySelector(".date-preview");
 
+
 const months = [
   "January", "February", "March", "April", "May", "June",
   "July", "August", "September", "October", "November", "December"
@@ -260,12 +261,17 @@ function updateDatePreview() {
     previewlist += `<div class="event-item">No events scheduled for this date.</div>`;
   }
 
-  daywiseevents.forEach(entry => {
+  daywiseevents
+  .sort((a, b) => a.event.start_time.localeCompare(b.event.start_time))
+  .forEach(entry => {
     const event = entry.event;
+
     previewlist += `<div class="event-item">
-                      <div class="event-title" style="border-left: 6px solid ${entry.eventColor}; padding-left: 8px;">${event.coursename} (${event.coursecode}) | ${entry.displaySessionType}</div>
+                      <div class="event-title" style="border-left: 6px solid ${entry.eventColor}; padding-left: 8px;">
+                        ${event.coursename} (${event.coursecode}) | ${entry.displaySessionType}
+                      </div>
                       <div class="event-details">
-                        <p>${event.professorname}</p>
+                        <p>Professor: ${event.professorname}</p>
                         <p>Start Time: ${event.start_time}</p>
                         <p>End Time: ${event.end_time}</p>
                       </div>
