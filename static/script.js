@@ -40,28 +40,32 @@ let eventsByDate = new Map();
 /* =========================
    Event Data (Load Once)
 ========================= */
-
+// This function generates a unique key for a given date in the format "YYYY-MM-DD".
 function dateKey(dateValue) {
   const y = dateValue.getFullYear();
   const m = String(dateValue.getMonth() + 1).padStart(2, "0");
   const d = String(dateValue.getDate()).padStart(2, "0");
   return `${y}-${m}-${d}`;
 }
+// This function parses the repetition text for an event and returns an object containing the mode, dayList, and sessionstartweek.
+function parseRepetition(text) {
+    const [eventoccurrences = "", eventdays = "", eventstartweek = ""] =
+        String(text || "").trim().split(/\s+/);
 
-function parseRepetition(repetitionText) {
-  const parts = String(repetitionText || "").trim().split(/\s+/);
-  const mode = parts[0] || "";
-  const dayPart = parts[1] || "";
-  const sessionstartweek = parts[2] || "";
+    const dayList = eventdays
+        .split(",")
+        .filter(Boolean)
+        .map(Number);
 
-  const dayList = dayPart
-    .split(",")
-    .map(v => parseInt(v, 10))
-    .filter(v => !Number.isNaN(v));
 
-  return { mode, dayList, sessionstartweek };
+    return {
+        eventoccurrences: Number(eventoccurrences),
+        eventdaylist: dayList,
+        eventstartweek: Number(eventstartweek)
+    };
 }
 
+// This function calculates the first occurrence of a specified weekday on or after a given start date.
 function firstWeekdayOnOrAfter(startDate, weekday) {
   const delta = (weekday - startDate.getDay() + 7) % 7;
   const dateValue = new Date(startDate);
@@ -96,160 +100,126 @@ function eventColorForType(baseType) {
 // This function turns each course/time slot into calendar entries.
 // It finds all repeating dates for an event, then stores them by date so the UI can quickly show events for a selected day.
 function buildEventIndex(events) {
+  console.log("Building event index for", events.length, "events.");
   eventTable = [];
   eventsByDate = new Map();
 
-  events.forEach(event => {
-    const startDate = new Date(
-      Number(event.start_year),
-      Number(event.start_month) - 1,
-      Number(event.start_day)
-    );
+  cachedEvents.forEach((event, index) => {
+    console.log(`Processing event ${index + 1}/${cachedEvents.length}:`, event);
+    const event_start_date = new Date(event.start_year, event.start_month - 1, event.start_day);
+    const event_end_date = new Date(event.end_year, event.end_month - 1, event.end_day);
+    //console.log("event_start_date:", event_start_date, "event_end_date:", event_end_date);
+    const event_start_time = event.start_time;
+    const event_end_time = event.end_time;
+    //console.log("event_start_time:", event_start_time, "event_end_time:", event_end_time);
+    const eventColor = eventColorForType(event.sessiontype);
+    const sessiontype = event.sessiontype.trim();
+    //console.log("sessiontype:", sessiontype, "eventColor:", eventColor);
+    const {eventoccurrences, eventdaylist, eventstartweek} = parseRepetition(event.repetition);
+    console.log("Parsed repetition for event:", {eventoccurrences, eventdaylist, eventstartweek});
+    const anchorWeekday = eventdaylist[0]; // Use the first specified weekday as the anchor for the repetition pattern.
+    /**
+     * Find the first Monday on or after the given date.
+     * Find the first day in the pattern that matches the event days using first monday of the month stored in effectiveEventStartDate.
+     */
+    const firstMonday = firstWeekdayOnOrAfter(event_start_date, 1); // 1 = Monday
+    let effectiveEventStartDate = firstWeekdayOnOrAfter(firstMonday, anchorWeekday); // Start from the first Monday of the month for the repetition pattern.
+    console.log("firstMonday:", firstMonday, "effectiveEventStartDate:", effectiveEventStartDate);
 
-    const endDate = new Date(
-      Number(event.end_year),
-      Number(event.end_month) - 1,
-      Number(event.end_day)
-    );
+    //console.log("anchorWeekday:", anchorWeekday);
+    const startingPointOfEventDate = effectiveEventStartDate; // Use the effectiveEventStartDate as the starting point for generating occurrences.
+    startingPointOfEventDate.setDate(startingPointOfEventDate.getDate() + eventstartweek * 7); // Adjust the first event date based on the session start week.
+    console.log("firstEventDate", startingPointOfEventDate, "Event's first weekday", anchorWeekday);
 
-    const { mode, dayList, sessionstartweek } = parseRepetition(event.repetition);
-    if (mode === "") {
-      console.warn("Session mode is empty:", event);
-    }
-    if (dayList === "") {
-      console.warn("Day list is empty:", event);
-    }
-    if (mode === "") {
-      console.warn("Session mode is empty:", event);
-    }
-    if (sessionstartweek === "") {
-      console.warn("Session start week is empty:", event);
-    }
-    // console.log("Session start week:", sessionstartweek, "Mode:", mode, "Day List:", dayList);
-    const hissa = event.sessiontype.trim().split(/\s+/);
-    const baseType = hissa[0].toUpperCase();
-    const targetCount = Number(hissa[1]); // Take session counts from the session type if available, otherwise default to 6.
-    console.log("Session start week:", sessionstartweek, "Mode:", mode, "Day List:", dayList, "Base Type:", baseType, "Target Count:", targetCount, "Session Type:", event.sessiontype);
-    const useOccurrenceLabel = baseType === "NPT" || baseType === "PT";
-    const eventColor = eventColorForType(baseType);
+    /**
+     * Generate occurrences based on the repetition mode and the specified weekdays.
+     * For "Every" mode, generate occurrences every week on the specified weekdays.
+     * For "Alternate" mode, generate occurrences every x weeks on the specified weekdays where x is the week interval.
+     */
 
-    // Ignore invalid entries or events that start after they end.
-    if (!dayList.length || startDate > endDate) {
-      return;
-    }
+    let currentDate = new Date(startingPointOfEventDate);
 
-    // Keep the pattern aligned to the first matching weekday.
-    const monthStart = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
-    let effectiveSessionStartDate = new Date(startDate); // Start with the event's start date, but may adjust to the first Monday of the month if needed.
-    //console.log("monthStart", monthStart, "effectiveSessionStartDate", effectiveSessionStartDate, "dayList", dayList);
-
-
-    // If the month doesn't start on a Monday, find the first Monday and use that as the effective start date.
-    if (monthStart.getDay() !== 1) {
-      const firstMonday = firstWeekdayOnOrAfter(monthStart, 1);
-      if (firstMonday > effectiveSessionStartDate) {
-        effectiveSessionStartDate = firstMonday;
-      }
-    }
-
-    if (effectiveSessionStartDate > endDate) {
-      return;
-    }
-
-    // Find the first day in the pattern that matches the event days using first monday of the month stored in effectiveSessionStartDate.
-    const anchorWeekday = dayList[0];
-    const firstEventDate = firstWeekdayOnOrAfter(effectiveSessionStartDate, anchorWeekday);
-    //console.log("firstEventDate", firstEventDate, "anchorWeekday", anchorWeekday, "effectiveSessionStartDate", effectiveSessionStartDate);
-
-    // If the first event date is after the end date, skip this event entirely.
-    if (firstEventDate > endDate) {
-      return;
-    }
-
-    // Example: "Every Monday/Wednesday" or "Alternate Week2". For 
-    // const alternateweekOffset = sessionstartweek + 1; // Track the offset for alternate week scheduling. If sessionstartweek is 0, it means the first week of the month, so we add 1 to align with the week index calculation.
-    const hasTargetCount = Number.isInteger(targetCount) && targetCount > 0;
-    let maxBlockGenerated = 0;
-    // Safety limit to prevent infinite loops in case of misconfigured repetition rules.
-    let iterations = 0;
-
-    // Walk forward day by day and create entries only on matching weekdays.
-    // Stop early if the end date, target count, or safety limit is reached.
-    for (let currentDate = new Date(firstEventDate); iterations < MAX_EXTENSION_DAYS; currentDate.setDate(currentDate.getDate() + 1), iterations++) {
-      const reachedEndDate = currentDate > endDate; // Stop if we've gone past the event's end date.
-      // Stop if we've generated enough blocks to satisfy the target count.
-      if (/*reachedEndDate*/ !hasTargetCount) {
-        break;
-      }
-
-      // Stop if we've generated enough blocks to satisfy the target counts for the session. like - 12, 6, 3, 2, 1 etc. depending on the session type.
-      if (hasTargetCount && maxBlockGenerated >= targetCount) {
-        break;
-      }
-
-      // Skip days that don't match the specified weekdays for the event.
-      const weekday = currentDate.getDay();
-      if (!dayList.includes(weekday)) {
-        continue;
-      }
-
-      // Calculate the week index relative to the first event date, then determine the block number based on the repetition mode.
-      // Means indexing weeks starting from the first event date i.e. First monday of the session starting month like September, May and January, where the first week is index 0, the second week is index 1, and so on.
-      const weekIndex = Math.floor((currentDate - effectiveSessionStartDate) / (7 * MS_IN_DAY));
-      let weekIndexcount = 0;
-      // Calculate the week index relative to the first Monday of the session.
-      //const weekIndexfromfirstmonday = Math.floor((currentDate - effectiveSessionStartDate) / (7 * MS_IN_DAY));
-      // Determine the block number based on the repetition mode and week index.
-      // Block number counts the occurrences of the event, starting from 1 for the first occurrence, 2 for the second occurrence, and so on.
-      console.log("weekindex", weekIndex, "weekIndexfromfirstmonday", weekIndexfromfirstmonday, "weekIndexcount", weekIndexcount);
-      let blockNumber = 0; // Counting session occurances weekwise
-
-
-      if (mode === "Every") {
-        if (weekIndex >= 0) {
-          
+    for (let eventoccurrenceCount = 1; eventoccurrenceCount < eventoccurrences+1; eventoccurrenceCount++) {
+      for ( let dayIndex = 0; dayIndex < eventdaylist.length; dayIndex++) {
+        const weekday = eventdaylist[dayIndex];
+        const occurrenceDate = firstWeekdayOnOrAfter(currentDate, weekday);
+        console.log("Generating occurrence for date:", occurrenceDate, "currentDate:", currentDate, "eventoccurrenceCount:", eventoccurrenceCount, "dayIndex:", dayIndex, "eventdaylist[dayIndex]:", eventdaylist[dayIndex]);
+        const isWeekend = weekday === 0 || weekday === 6; // Check if the current date is a weekend (Saturday or Sunday).
+        const dynamicSlotName = isWeekend ? "Slot-B" : "Slot-A"; // Assign dynamic slot names based on whether the current date is a weekend or a weekday.
+        if (sessiontype === "PT") {
+          displaySessionType = `${sessiontype}-${eventoccurrenceCount} (${dynamicSlotName})`;
+        } else {
+          displaySessionType = `${sessiontype}-${eventoccurrenceCount}`;
         }
-        if (weekIndex === targetCount) {
-          break;
+        
+        const key = dateKey(occurrenceDate);
+        const record = {
+          date: key,
+          event: event,
+          eventColor: eventColor,
+          occurrenceCount: eventoccurrenceCount + 1,
+          displaySessionType: `${displaySessionType}`,
+        };
+        //console.log("Adding record for date", key, ":", record);
+
+        eventTable.push(record);
+
+        // Group events by date for quick lookup when rendering the calendar.
+        if (!eventsByDate.has(key)) {
+          eventsByDate.set(key, []);
         }
-      };
-      for (let i = 0; i <= weekIndex; i++) {
-        if (mode === "Every") {
-          weekIndexcount++;
-        }
-        else if (mode === "Alternate") {
-          if (i % 2 === 0) {
-            weekIndexcount++;
+
+        // Add the record to the list of events for this date.
+        eventsByDate.get(key).push(record);
+        //console.log("Added record for date", key, ":", record);
+
+        console.log(record, "record");
+
+        let tempcurrentDate = new Date(currentDate);
+        if (eventdaylist.length === dayIndex + 1) {
+          //console.log("");
+          currentDate.setDate(occurrenceDate.getDate() + 1 + ((12/eventoccurrences)-1)*7);
+          if (tempcurrentDate > currentDate) {
+            let date = currentDate.getDate();
+            let month = currentDate.getMonth();
+            let year = currentDate.getFullYear();
+            currentDate = new Date(year, month + 1, date);
+          }
+        } else {
+          currentDate.setDate(currentDate.getDate() + 1); // Move to the next day after the occurrence for the next iteration.
+          if (tempcurrentDate > currentDate) {
+            let date = currentDate.getDate();
+            let month = currentDate.getMonth();
+            let year = currentDate.getFullYear();
+            currentDate = new Date(year, month + 1, date);
           }
         }
-      };
-
-
-
-      maxBlockGenerated = Math.max(maxBlockGenerated, targetCount);
-      const isWeekend = currentDate.getDay() === 0 || currentDate.getDay() === 6;
-      const dynamicSlotName = isWeekend ? "Slot-B" : "Slot-A";
-      const displaySessionType = useOccurrenceLabel
-        ? `${baseType}-${weekIndexcount} (${dynamicSlotName})`
-        : event.sessiontype;
-
-      const key = dateKey(currentDate);
-      const record = {
-        date: key,
-        event,
-        eventColor,
-        occurrenceCount: weekIndexcount,
-        displaySessionType,
-      };
-
-      eventTable.push(record);
-
-      if (!eventsByDate.has(key)) {
-        eventsByDate.set(key, []);
       }
-
-      eventsByDate.get(key).push(record);
     }
+    
+  
+
+    //const currentDate = new Date(); // Replace with the actual current date
+    //const key = dateKey(currentDate);
+    /*const record = {
+      date: key,
+      event: event,
+      eventColor: eventColor,
+      occurrenceCount: eventcount,
+      displaySessionType,
+    };
+    //console.log("Adding record for date", key, ":", record);
+
+    eventTable.push(record);
+
+    // Group events by date for quick lookup when rendering the calendar.
+    if (!eventsByDate.has(key)) {
+      eventsByDate.set(key, []);
+    }
+
+    // Add the record to the list of events for this date.
+    eventsByDate.get(key).push(record);
+    console.log("Added record for date", key, ":", record);*/
   });
 }
 
@@ -261,8 +231,9 @@ async function loadEventsOnce() {
   const res = await fetch(`/api/calendar-events/${encodeURIComponent(window.calendarUsername)}`);
   const data = await res.json();
   cachedEvents = Array.isArray(data.events) ? data.events : [];
+  console.log(`Loading Funtion: ${cachedEvents.length} events for user ${window.calendarUsername}`);
+  console.log("Cached Events:", cachedEvents);
   buildEventIndex(cachedEvents);
-  console.log(`Loaded ${cachedEvents.length} events for user ${window.calendarUsername}`);
 }
 
 
