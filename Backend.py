@@ -65,7 +65,7 @@ JOIN course c
 JOIN coursesession cse 
     ON c.coursecode = cse.coursecode
 JOIN trimester tr 
-    ON c.session_id = tr.session_id
+    ON c.trimester_period_id = tr.trimester_period_id
 WHERE ur.userid = %s 
   AND ur.coursestatus = 'active';''')
     cursor.execute(query, (userid,))
