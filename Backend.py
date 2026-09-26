@@ -1,11 +1,25 @@
 from flask import Flask, render_template, request, jsonify, url_for
+from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 import mysql.connector
 import os
+from argon2 import PasswordHasher
 from datetime import datetime
 
+# Initialize PasswordHasher for secure password hashing
+ph = PasswordHasher()
+
+# Initialize Flask application and configure template and static folders
 app = Flask(__name__,
             template_folder=os.path.join(os.path.dirname(__file__),'templates'),
             static_folder=os.path.join(os.path.dirname(__file__),'static'))
+
+# Configure secret key for session management
+app.config["SECRET_KEY"] = "your-secret-key"
+
+login_manager = LoginManager()
+login_manager.init_app(app)
+
+login_manager.login_view = "login"
 
 # MySQL configuration
 db_config = {
@@ -30,36 +44,98 @@ day_mapping = {
 # Start page of the Web Application
 @app.route('/')
 def index():
-    return render_template('login.html') # Starts with login.html
+    return render_template('login_signin.html') # Starts with login_signin.html
 
-@app.route('/login', methods=['POST'])
+@app.route('/login', methods=['POST', 'GET'])
 def login():
-    json_data = request.get_json(silent=True) or {}
-    form_data = request.form or {}
+    if request.method == 'POST':
+        json_data = request.get_json(silent=True) or {}
+        form_data = request.form or {}
 
-    userid = json_data.get('userid')
-    password = json_data.get('password')
+        userid = json_data.get('userid')
+        webpassword = json_data.get('password')
 
-    conn = mysql.connector.connect(**db_config)
-    cursor = conn.cursor()
-    query = "SELECT pwd FROM userpwd WHERE userid = %s"
-    cursor.execute(query, (userid,))
-    pwd = cursor.fetchone()
-    print(f"Query: {query}, Userid: {userid}, Password: {password}, Fetched PWD: {pwd}")
-    cursor.close()
-    conn.close()
+        conn = mysql.connector.connect(**db_config)
+        cursor = conn.cursor()
+        query = "SELECT pwd FROM userpwd WHERE userid = %s"
+        cursor.execute(query, (userid,))
+        fetcheduser = cursor.fetchone()
 
-    # Add your login logic here
-    if pwd and password == pwd[0]: # Replace with actual authentication logic
-        return jsonify({
-        "message": "Login successful",
-        "redirect": url_for('calendar_page', userid=userid)
-    }), 200 # Redirect to calendar page on successful login
-    else:
-        return jsonify({
-            "message": "Invalid userid or password"
-        }), 401 # Return error message for invalid credentials
+        if fetcheduser is None:
+            cursor.close()
+            conn.close()
+            return jsonify({
+                "message": "Invalid userid or password."
+            }), 401 # Return error message for invalid userid
 
+        hashed_password = fetcheduser[0]
+
+        try:
+            ph.verify(hashed_password, webpassword)
+            cursor.close()
+            conn.close()
+            return jsonify({
+                "message": "Login successful",
+                "redirect": url_for('calendar_page', userid=userid)
+            }), 200 # Redirect to calendar page on successful login
+        except Exception as e:
+            cursor.close()
+            conn.close()
+            return jsonify({
+                "message": "Invalid userid or password."
+            }), 401 # Return error message for invalid password
+    if request.method == 'GET':
+        return render_template('login_signin.html') # Render the login page for GET requests
+
+@app.route('/signup', methods=['POST', 'GET'])
+def signup():
+    if request.method == 'POST':
+        json_data = request.get_json(silent=True) or {}
+        form_data = request.form or {}
+
+        username = json_data.get('username')
+        userid = json_data.get('userid')
+        webpassword = json_data.get('password')
+
+        if len(webpassword) < 10:
+            return jsonify({
+                "message": "Password must be at least 10 characters long."
+            }), 400 # Return error message for short password
+
+        hashed_password = ph.hash(webpassword)
+
+        conn = mysql.connector.connect(**db_config)
+        cursor = conn.cursor()
+        query = "SELECT userid FROM userpwd WHERE userid = %s"
+        cursor.execute(query, (userid,))
+        fetcheduser = cursor.fetchone()
+
+        if fetcheduser is not None: # Check if the fetched user is not None
+            cursor.close()
+            conn.close()
+            return jsonify({
+                "message": "Userid already exists. Please choose a different userid."
+            }), 400 # Return error message for existing userid
+
+        query = "INSERT INTO userpwd (userid, username, pwd) VALUES (%s, %s, %s)"
+        print(f"Query: {query}, Userid: {userid}, Username: {username}, Hashed PWD: {hashed_password}")
+        try:
+            cursor.execute(query, (userid, username, hashed_password))
+            conn.commit()
+            cursor.close()
+            conn.close()
+            return jsonify({
+                "message": "Signup successful",
+                "redirect": url_for('login')
+            }), 200 # Redirect to calendar page on successful signup
+        except mysql.connector.Error as err:
+            cursor.close()
+            conn.close()
+            return jsonify({
+                "message": f"Error: {err}"
+            }), 500 # Return error message for database error
+    if request.method == 'GET':
+        return render_template('login_signup.html') # Render the signup page for GET requests
 
 @app.route('/calendar/<userid>', methods=['GET'])
 def calendar_page(userid):

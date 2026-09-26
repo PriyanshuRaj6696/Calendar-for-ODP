@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+<!-- Body content -->
+{% block body %}
+    <div class="login-container">
+        <h2>Login Page</h2>
+        <form method="POST" action="/login">
+            <div class="form-container">
+                <div class="form-username">
+                    <label for="userid">Userid:</label>
+                    <input type="text" id="userid" name="userid" required>
+                </div>
+                
+                <div class="form-password">
+                    <div class="form-password-input">
+                        <label for="password">Password:</label>
+                        <input type="password" id="password" name="password" required>
+                    </div>
+                </div>
+
+                <div class="form-show-password-signin-signup">
+                    <label for="show_password">Show Password:</label>
+                    <input type="checkbox" id="show_password" name="show_password">
+                    <button type="submit" id="login-button">Sign In</button>
+                    <button type="button" id="signup-button">Sign Up</button>
+                </div>
+            </div>
+        </form>
+    </div>
+{% endblock %}
+
+<!-- Style for the page -->
+{% block style %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='style_login.css') }}">
+{% endblock %}
+
+<!-- Script for the page -->
+{% block script %}
+    <script src="{{ url_for('static', filename='login_signin.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+
+<!-- Body content -->
+{% block body %}
+    <div class="login-container">
+        <h2>Sign Up Page</h2>
+        <form method="POST" action="/signup">
+            <div class="form-container">
+                <div class="form-username">
+                    <label for="username">Enter Username:</label>
+                    <input type="text" id="username" name="username" required>
+                </div>
+                <div class="form-userid">
+                    <label for="userid">Enter Userid:</label>
+                    <input type="text" id="userid" name="userid" required>
+                </div>
+                
+                <div class="form-password">
+                    <div class="form-password-input">
+                        <label for="password">Enter Password:</label>
+                        <input type="password" id="password" name="password" required>
+                    </div>
+                    <p>Note: Password must be at least 10 characters long.</p>
+                </div>
+
+                <div class="form-show-password-signin-signup">
+                    <label for="show_password">Show Password:</label>
+                    <input type="checkbox" id="show_password" name="show_password">
+                    <button type="submit" id="signup-button">Sign Up</button>
+                </div>
+            </div>
+        </form>
+
+        <div>
+            <p>Already have an account? <a href="/login">Sign In</a></p>
+        </div>
+    </div>
+{% endblock %}
+
+
+<!-- Style for the page -->
+{% block style %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='style_login.css') }}">
+{% endblock %}
+
+<!-- Script for the page -->
+{% block script %}
+    <script src="{{ url_for('static', filename='login_signup.js') }}"></script>
+{% endblock %}
