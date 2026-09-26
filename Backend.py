@@ -16,6 +16,17 @@ db_config = {
 }
 
 
+day_mapping = {
+    'mon': 1,
+    'tue': 2,
+    'wed': 3,
+    'thu': 4,
+    'fri': 5,
+    'sat': 6,
+    'sun': 0
+}
+
+
 # Start page of the Web Application
 @app.route('/')
 def index():
@@ -76,6 +87,16 @@ WHERE ur.userid = %s
         course_end_date, course_end_month = map(int, row[8].split("-"))
         course_start_year = int(row[9])
         course_end_year = int(row[9])
+
+        # Split the repetition string into its components
+        eventoccurrences, eventdaylist, eventstartweekday = row[6].split(" ")
+        eventdaylist = eventdaylist.split(",")
+        eventdaylisttemp = ""
+        for day in eventdaylist:
+            eventdaylisttemp = eventdaylisttemp + (",") + str(day_mapping[day])
+        eventdaylist = eventdaylisttemp[1:]  # Remove the leading comma
+        
+        # Format the event data for the frontend
         eventtabledata.append({
             "coursecode": row[0],
             "coursename": row[1],
@@ -83,7 +104,7 @@ WHERE ur.userid = %s
             "sessiontype": row[3],
             "start_time": row[4].strftime("%H:%M") if hasattr(row[4], "strftime") else str(row[4]),
             "end_time": row[5].strftime("%H:%M") if hasattr(row[5], "strftime") else str(row[5]),
-            "repetition": row[6],
+            "repetition": f"{eventoccurrences} {eventdaylist} {eventstartweekday}",
             "start_day": course_start_date,
             "start_month": course_start_month,
             "start_year": course_start_year,

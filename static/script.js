@@ -123,7 +123,8 @@ function buildEventIndex(events) {
      * Find the first Monday on or after the given date.
      * Find the first day in the pattern that matches the event days using first monday of the month stored in effectiveEventStartDate.
      */
-    const firstMonday = firstWeekdayOnOrAfter(event_start_date, 1); // 1 = Monday
+    // 0 = Sunday, 1 = Monday, 2 = Tuesday, ..., 6 = Saturday
+    const firstMonday = firstWeekdayOnOrAfter(event_start_date, 1);
     let effectiveEventStartDate = firstWeekdayOnOrAfter(firstMonday, anchorWeekday); // Start from the first Monday of the month for the repetition pattern.
     console.log("firstMonday:", firstMonday, "effectiveEventStartDate:", effectiveEventStartDate);
 
@@ -271,9 +272,9 @@ function updateDatePreview() {
                         ${event.coursename} (${event.coursecode}) | ${entry.displaySessionType}
                       </div>
                       <div class="event-details">
-                        <p>Professor: ${event.professorname}</p>
-                        <p>Start Time: ${event.start_time}</p>
-                        <p>End Time: ${event.end_time}</p>
+                        <p>Professor: Prof. ${event.professorname}</p>
+                        <p>Start Time: ${event.start_time} IST</p>
+                        <p>End Time: ${event.end_time} IST</p>
                       </div>
                     </div>`;
   });
