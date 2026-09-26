@@ -5,6 +5,8 @@ import os
 from argon2 import PasswordHasher
 from dotenv import load_dotenv
 from datetime import datetime
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 
 # Load environment variables from .env file
 load_dotenv()
@@ -25,6 +27,24 @@ login_manager.init_app(app)
 
 login_manager.login_view = "login"
 
+# Initialize Flask-Limiter for rate limiting
+limiter = Limiter(
+    key_func=get_remote_address,
+    app=app,
+    headers_enabled=True
+)
+
+# Configure session and remember cookie settings for security
+app.config.update(
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE="Lax",
+    SESSION_COOKIE_SECURE=False,
+
+    REMEMBER_COOKIE_HTTPONLY=True,
+    REMEMBER_COOKIE_SAMESITE="Lax",
+    REMEMBER_COOKIE_SECURE=False,
+)
+
 # MySQL configuration
 db_config = {
     'host': '127.0.0.1',
@@ -33,7 +53,7 @@ db_config = {
     'database': 'CalendarDB'
 }
 
-
+# Mapping of day abbreviations to their corresponding integer values (0-6)
 day_mapping = {
     'mon': 1,
     'tue': 2,
@@ -78,7 +98,15 @@ def load_user(userid):
 def index():
     return render_template('login_signin.html') # Starts with login_signin.html
 
+@app.errorhandler(429)
+def ratelimit_error(error):
+    return jsonify({
+        "status": "rate_limited",
+        "message": "Too many login attempts. Please try again later."
+    }), 429
+
 @app.route('/login', methods=['POST', 'GET'])
+@limiter.limit("5 per minute")  # Limit login attempts to 5 per minute
 def login():
     if request.method == 'POST':
         json_data = request.get_json(silent=True) or {}
@@ -97,7 +125,7 @@ def login():
             cursor.close()
             conn.close()
             return jsonify({
-                "message": "Invalid userid or password."
+                "message": "Userid does not exist. Please check your userid or sign up."
             }), 401 # Return error message for invalid userid
 
         hashed_password = fetcheduser[0]
@@ -116,7 +144,7 @@ def login():
             cursor.close()
             conn.close()
             return jsonify({
-                "message": "Invalid userid or password."
+                "message": "Invalid password. Password may be incorrect. Please try again."
             }), 401 # Return error message for invalid password
     if request.method == 'GET':
         return render_template('login_signin.html') # Render the login page for GET requests

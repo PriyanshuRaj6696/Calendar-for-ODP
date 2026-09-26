@@ -26,6 +26,37 @@ document.addEventListener("DOMContentLoaded", () => {
 		}
 	});
 
+	function startCountdown(seconds) {
+		const submitBtn = document.querySelector("#login-button");
+
+		submitBtn.disabled = true;
+
+		let remaining = seconds;
+
+		setMessage(
+			`Too many login attempts. Try again in ${remaining} seconds.`
+		);
+
+		const timer = setInterval(() => {
+			remaining--;
+
+			if (remaining <= 0) {
+				clearInterval(timer);
+
+				submitBtn.disabled = false;
+
+				setMessage("You can try logging in again.", false);
+
+				return;
+			}
+
+			setMessage(
+				`Too many login attempts. Try again in ${remaining} seconds.`
+			);
+
+		}, 1000);
+	}
+
     form.addEventListener("submit", async (event) => {
 
         event.preventDefault();
@@ -59,8 +90,19 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const data = await response.json();
 
+			if (response.status === 429) {
+        		const retryAfter = response.headers.get("Retry-After");
+
+				if (retryAfter && !isNaN(Number(retryAfter))) {
+					startCountdown(Number(retryAfter));
+				} else {
+					setMessage("Too many login attempts. Please try again later.");
+				}
+        		return;
+    		}
+
             if (!response.ok) {
-                setMessage(data.message || "Invalid userid or password.");
+                setMessage(data.message || "Something went wrong.");
                 return;
             }
 
