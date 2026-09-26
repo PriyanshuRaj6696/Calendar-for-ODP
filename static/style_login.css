@@ -2,12 +2,25 @@
     --ink: #17232d; /* Dark text color for primary content */
 }
 
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Poppins', 'Segoe UI', sans-serif;
+}
+
 body {
     min-height: 100vh;
     color: var(--ink);
     background: #e7efeb;
+}
+
+.login-page, .signup-page {
     display: flex;
-    justify-content: center;
+    align-items: center;
+    max-width: 1180px;
+    min-height: 560px;
+    margin: 0 auto;
 }
 
 .login-container {

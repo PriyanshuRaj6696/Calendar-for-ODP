@@ -3,7 +3,11 @@ from flask_login import LoginManager, UserMixin, login_user, logout_user, login_
 import mysql.connector
 import os
 from argon2 import PasswordHasher
+from dotenv import load_dotenv
 from datetime import datetime
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Initialize PasswordHasher for secure password hashing
 ph = PasswordHasher()
@@ -14,7 +18,7 @@ app = Flask(__name__,
             static_folder=os.path.join(os.path.dirname(__file__),'static'))
 
 # Configure secret key for session management
-app.config["SECRET_KEY"] = "your-secret-key"
+app.config["SECRET_KEY"] = os.environ["SECRET_KEY"]
 
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -39,6 +43,34 @@ day_mapping = {
     'sat': 6,
     'sun': 0
 }
+
+# User class for Flask-Login
+class User(UserMixin):
+    def __init__(self, userid, username):
+        self.id = userid
+        self.username = username
+
+# User loader callback for Flask-Login
+@login_manager.user_loader
+def load_user(userid):
+    conn = mysql.connector.connect(**db_config)
+    cursor = conn.cursor()
+    query = """
+        SELECT userid, username
+        FROM userpwd
+        WHERE userid = %s
+    """
+
+    cursor.execute(query, (userid,))
+    row = cursor.fetchone()
+
+    cursor.close()
+    conn.close()
+
+    if row is None:
+        return None
+
+    return User(row[0], row[1])
 
 
 # Start page of the Web Application
@@ -71,13 +103,15 @@ def login():
         hashed_password = fetcheduser[0]
 
         try:
-            ph.verify(hashed_password, webpassword)
-            cursor.close()
-            conn.close()
-            return jsonify({
-                "message": "Login successful",
-                "redirect": url_for('calendar_page', userid=userid)
-            }), 200 # Redirect to calendar page on successful login
+            if ph.verify(hashed_password, webpassword):
+                user = load_user(userid)  # Assuming username is same as userid for simplicity
+                login_user(user)
+                cursor.close()
+                conn.close()
+                return jsonify({
+                    "message": "Login successful",
+                    "redirect": url_for('calendar_page')
+                }), 200 # Redirect to calendar page on successful login
         except Exception as e:
             cursor.close()
             conn.close()
@@ -137,12 +171,27 @@ def signup():
     if request.method == 'GET':
         return render_template('login_signup.html') # Render the signup page for GET requests
 
-@app.route('/calendar/<userid>', methods=['GET'])
-def calendar_page(userid):
-    return render_template('Calendar.html', username=userid, userid=userid) # Pass the userid to the calendar page
 
-@app.route('/api/calendar-events/<userid>', methods=['GET'])
-def calendar_events(userid):
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    print("User logged out successfully.")
+    return render_template('login_signin.html') # Redirect to login page after logout
+
+
+@app.route('/calendar', methods=['GET'])
+@login_required
+def calendar_page():
+    print("Current user ID:", current_user.id)
+    print("Current username:", current_user.username)
+    print("Authenticated:", current_user.is_authenticated)
+    return render_template('Calendar.html') # Render the calendar page
+
+@app.route('/api/calendar-events', methods=['GET'])
+@login_required
+def calendar_events():
+    userid = current_user.id  # Get the current user's ID
     conn = mysql.connector.connect(**db_config)
     cursor = conn.cursor()
     query = ('''SELECT c.coursecode, c.coursename, c.professorname, cse.sessiontype, cse.start_time, cse.end_time, cse.repetition, tr.start_date, tr.end_date, ur.year
