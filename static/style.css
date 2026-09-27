@@ -5,7 +5,7 @@
     --panel: #ffffff; /* Background color for panels and cards */
     --calendar: #203b3d; /* Dark color for calendar elements */
     --calendar-soft: #2b4e50; /* Softer dark color for calendar elements */
-    --line: #dce6e2; /* Color for lines and borders */
+    --line: #263831; /* Color for lines and borders */
     --mint: #b8efd9; /* Mint color for highlights and accents */
     --focus: #ffcb77; /* Color for focused elements */
     --npt: #00a2ff; /* Color for NPT events */
@@ -27,6 +27,11 @@ body {
     padding: clamp(20px, 5vw, 64px) clamp(14px, 4vw, 56px) 28px;
     color: var(--ink);
     background: #e7efeb;
+}
+
+.calendar-header {
+    border-bottom: 2px solid var(--line);
+    margin-bottom: 28px;
 }
 
 .calendar-page {

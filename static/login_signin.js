@@ -8,6 +8,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const submitBtn = form.querySelector("#login-button");
 	const showPasswordCheckbox = form.querySelector('input[name="show_password"]');
 
+	const csrfToken = document.querySelector("#csrf-token").value;
+
     const messageEl = document.createElement("p");
     messageEl.id = "login-message";
     messageEl.style.marginTop = "8px";
@@ -80,7 +82,8 @@ document.addEventListener("DOMContentLoaded", () => {
             const response = await fetch("/login", {
                 method: "POST",
                 headers: {
-                    "Content-Type": "application/json"
+                    "Content-Type": "application/json",
+					"X-CSRFToken": csrfToken
                 },
                 body: JSON.stringify({
                     userid: userid,

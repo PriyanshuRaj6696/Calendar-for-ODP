@@ -2,10 +2,17 @@
 
 <!-- Body content -->
 {% block body %}
-    <header>
+    <header class="calendar-header">
             <h1>Calendar</h1>
             {% if current_user.is_authenticated %}
-                <p>Welcome, {{ current_user.username }}! <a href="/logout">Logout</a></p>
+                <p>Welcome, {{ current_user.username }}!</p>
+                <form method="POST" action="{{ url_for('logout') }}">
+                    <input type="hidden"
+                        name="csrf_token"
+                        value="{{ csrf_token() }}">
+
+                    <button type="submit">Logout</button>
+                </form>
             {% endif %}
     </header>
     <main class="calendar-page" aria-label="Academic calendar">

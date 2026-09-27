@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, url_for
+from flask import Flask, render_template, request, jsonify, url_for, make_response
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 import mysql.connector
 import os
@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 from datetime import datetime
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from flask_wtf.csrf import CSRFProtect
 
 # Load environment variables from .env file
 load_dotenv()
@@ -21,6 +22,9 @@ app = Flask(__name__,
 
 # Configure secret key for session management
 app.config["SECRET_KEY"] = os.environ["SECRET_KEY"]
+
+# Enable CSRF protection for the application
+csrf = CSRFProtect(app)
 
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -200,7 +204,7 @@ def signup():
         return render_template('login_signup.html') # Render the signup page for GET requests
 
 
-@app.route('/logout')
+@app.route('/logout', methods=['POST'])
 @login_required
 def logout():
     logout_user()
@@ -211,15 +215,23 @@ def logout():
 @app.route('/calendar', methods=['GET'])
 @login_required
 def calendar_page():
-    print("Current user ID:", current_user.id)
-    print("Current username:", current_user.username)
-    print("Authenticated:", current_user.is_authenticated)
-    return render_template('Calendar.html') # Render the calendar page
+    response = make_response(
+        render_template(
+            'Calendar.html',
+            username=current_user.username,
+            userid=current_user.id
+        )
+    )
+
+    response.headers['Cache-Control'] = 'no-store'
+
+    return response
 
 @app.route('/api/calendar-events', methods=['GET'])
 @login_required
 def calendar_events():
     userid = current_user.id  # Get the current user's ID
+    print(f"Fetching calendar events for user: {userid}")
     conn = mysql.connector.connect(**db_config)
     cursor = conn.cursor()
     query = ('''SELECT c.coursecode, c.coursename, c.professorname, cse.sessiontype, cse.start_time, cse.end_time, cse.repetition, tr.start_date, tr.end_date, ur.year

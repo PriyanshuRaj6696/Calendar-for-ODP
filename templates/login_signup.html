@@ -2,7 +2,7 @@
 
 <!-- Body content -->
 {% block body %}
-    <header>
+    <header class="signup-header">
         <h1>Calendar</h1>
         {% if current_user.is_authenticated %}
             <p>Welcome, {{ current_user.username }}! <a href="/logout">Logout</a></p>
@@ -12,6 +12,8 @@
         <div class="login-container">
             <h2>Sign Up Page</h2>
             <form method="POST" action="/signup">
+                <input type="hidden" id="csrf-token" value="{{ csrf_token() }}">
+
                 <div class="form-container">
                     <div class="form-username">
                         <label for="username">Enter Username:</label>

@@ -106,7 +106,7 @@ function buildEventIndex(events) {
   eventsByDate = new Map();
 
   cachedEvents.forEach((event, index) => {
-    console.log(`Processing event ${index + 1}/${cachedEvents.length}:`, event);
+    //console.log(`Processing event ${index + 1}/${cachedEvents.length}:`, event);
     const event_start_date = new Date(event.start_year, event.start_month - 1, event.start_day);
     const event_end_date = new Date(event.end_year, event.end_month - 1, event.end_day);
     //console.log("event_start_date:", event_start_date, "event_end_date:", event_end_date);
@@ -117,7 +117,7 @@ function buildEventIndex(events) {
     const sessiontype = event.sessiontype.trim();
     //console.log("sessiontype:", sessiontype, "eventColor:", eventColor);
     const {eventoccurrences, eventdaylist, eventstartweek} = parseRepetition(event.repetition);
-    console.log("Parsed repetition for event:", {eventoccurrences, eventdaylist, eventstartweek});
+    //console.log("Parsed repetition for event:", {eventoccurrences, eventdaylist, eventstartweek});
     const anchorWeekday = eventdaylist[0]; // Use the first specified weekday as the anchor for the repetition pattern.
     /**
      * Find the first Monday on or after the given date.
@@ -126,12 +126,12 @@ function buildEventIndex(events) {
     // 0 = Sunday, 1 = Monday, 2 = Tuesday, ..., 6 = Saturday
     const firstMonday = firstWeekdayOnOrAfter(event_start_date, 1);
     let effectiveEventStartDate = firstWeekdayOnOrAfter(firstMonday, anchorWeekday); // Start from the first Monday of the month for the repetition pattern.
-    console.log("firstMonday:", firstMonday, "effectiveEventStartDate:", effectiveEventStartDate);
+    //console.log("firstMonday:", firstMonday, "effectiveEventStartDate:", effectiveEventStartDate);
 
     //console.log("anchorWeekday:", anchorWeekday);
     const startingPointOfEventDate = effectiveEventStartDate; // Use the effectiveEventStartDate as the starting point for generating occurrences.
     startingPointOfEventDate.setDate(startingPointOfEventDate.getDate() + eventstartweek * 7); // Adjust the first event date based on the session start week.
-    console.log("firstEventDate", startingPointOfEventDate, "Event's first weekday", anchorWeekday);
+    //console.log("firstEventDate", startingPointOfEventDate, "Event's first weekday", anchorWeekday);
 
     /**
      * Generate occurrences based on the repetition mode and the specified weekdays.
@@ -145,7 +145,7 @@ function buildEventIndex(events) {
       for ( let dayIndex = 0; dayIndex < eventdaylist.length; dayIndex++) {
         const weekday = eventdaylist[dayIndex];
         const occurrenceDate = firstWeekdayOnOrAfter(currentDate, weekday);
-        console.log("Generating occurrence for date:", occurrenceDate, "currentDate:", currentDate, "eventoccurrenceCount:", eventoccurrenceCount, "dayIndex:", dayIndex, "eventdaylist[dayIndex]:", eventdaylist[dayIndex]);
+        //console.log("Generating occurrence for date:", occurrenceDate, "currentDate:", currentDate, "eventoccurrenceCount:", eventoccurrenceCount, "dayIndex:", dayIndex, "eventdaylist[dayIndex]:", eventdaylist[dayIndex]);
         const isWeekend = weekday === 0 || weekday === 6; // Check if the current date is a weekend (Saturday or Sunday).
         const dynamicSlotName = isWeekend ? "Slot-B" : "Slot-A"; // Assign dynamic slot names based on whether the current date is a weekend or a weekday.
         if (sessiontype === "PT") {
@@ -175,7 +175,7 @@ function buildEventIndex(events) {
         eventsByDate.get(key).push(record);
         //console.log("Added record for date", key, ":", record);
 
-        console.log(record, "record");
+        //console.log(record, "record");
 
         let tempcurrentDate = new Date(currentDate);
         if (eventdaylist.length === dayIndex + 1) {
@@ -230,11 +230,11 @@ async function loadEventsOnce() {
     return;
   }
 
-  const res = await fetch(`/api/calendar-events/${encodeURIComponent(window.calendarUsername)}`);
+  const res = await fetch(`/api/calendar-events`);
   const data = await res.json();
   cachedEvents = Array.isArray(data.events) ? data.events : [];
-  console.log(`Loading Funtion: ${cachedEvents.length} events for user ${window.calendarUsername}`);
-  console.log("Cached Events:", cachedEvents);
+  //console.log(`Loading Funtion: ${cachedEvents.length} events for user ${window.userid}`);
+  //console.log("Cached Events:", cachedEvents);
   buildEventIndex(cachedEvents);
 }
 

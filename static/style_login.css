@@ -9,6 +9,11 @@
     font-family: 'Poppins', 'Segoe UI', sans-serif;
 }
 
+.signup-header, .login-header {
+    border-bottom: 5px solid var(--line);
+    margin-bottom: 28px;
+}
+
 body {
     min-height: 100vh;
     color: var(--ink);
