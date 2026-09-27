@@ -104,6 +104,12 @@ document.addEventListener("DOMContentLoaded", () => {
         		return;
     		}
 
+
+			if (response.status === 400) {
+        		setMessage("Bad request. Please reload the page and try again.");
+        		return;
+    		}
+
             if (!response.ok) {
                 setMessage(data.message || "Something went wrong.");
                 return;
@@ -116,7 +122,7 @@ document.addEventListener("DOMContentLoaded", () => {
         } catch (error) {
 
             console.error("Login error:", error);
-            setMessage("Unable to login. Please try again.");
+            setMessage("Something went wrong. Please try again.");
 
         } finally {
 
